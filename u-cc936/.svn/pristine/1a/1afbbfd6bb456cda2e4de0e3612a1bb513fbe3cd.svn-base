@@ -1,0 +1,85 @@
+{# Test runs that need to run a full period #}
+
+{% if TEST_PE %}
+        [[[ R1 ]]]
+            graph = """
+                    atmos_main[^]:submit => atmos_pe
+                    atmos_main[^] & atmos_pe => rose_ana_pe
+                    rose_ana_pe:finish => housekeeping
+                    """
+{% endif %}
+
+{% if TEST_OMP %}
+        [[[ R1 ]]]
+            graph = """
+                    atmos_main[^]:submit => atmos_omp
+                    atmos_main[^] & atmos_omp => rose_ana_omp
+                    rose_ana_omp:finish => housekeeping
+                    """
+{% endif %}
+
+{% if TEST_NOOMP %}
+        {% set NOOMP_FCMUM_GRAPH = 'fcm_make_um_noomp' %}
+        {% set NOOMP_FCMUM_GRAPH = NOOMP_FCMUM_GRAPH ~ ' => fcm_make2_um_noomp' if SITE in DBLE_FCMUM else NOOMP_FCMUM_GRAPH %}
+        [[[ R1 ]]]
+            graph = """
+                    {{ NOOMP_FCMUM_GRAPH ~ ' => atmos_noomp' if TASK_BUILD_UM else '' }}
+                    atmos_main[^]:submit => atmos_noomp
+                    atmos_main[^] & atmos_noomp => rose_ana_noomp
+                    rose_ana_noomp:finish => housekeeping
+                    """
+{% endif %}
+
+{% if TEST_DUMPFREQ %}
+        [[[ R1 ]]]
+            graph = """
+                    atmos_main[^]:submit => atmos_dumpfreq
+                    atmos_main[^] & atmos_dumpfreq => rose_ana_dumpfreq
+                    rose_ana_dumpfreq:finish => housekeeping
+                    """
+{% endif %}
+
+{# Test runs that only test diagnostics #}
+
+{% if TEST_INCS %}
+        [[[ R1 ]]]
+            graph = """
+                    atmos_main[^]:submit => atmos_incs
+                    atmos_main[^] & atmos_incs => test_inc_budget => rose_ana_incs
+                    rose_ana_incs:finish => housekeeping
+                    """
+{% endif %}
+
+{% if TEST_NOSTASH %}
+        [[[ R1 ]]]
+            graph = """
+                    atmos_main[^]:submit => atmos_nostash
+                    atmos_main[^] & atmos_nostash => rose_ana_nostash
+                    rose_ana_nostash:finish => housekeeping
+                    """
+{% endif %}
+
+{# Test runs that need to run a shorter resubmission period #}
+{# This should be the dump frequency in the UM job          #}
+
+{% if TEST_CRUN %}
+        [[[ R1 ]]]
+            graph = atmos_main[^]:submit => atmos_crun
+        [[[ R3//{{NCRUN_RESUB}} ]]]
+            graph = """
+                    atmos_crun[-{{NCRUN_RESUB}}] => atmos_crun
+                    atmos_main[^] & atmos_crun => rose_ana_crun
+                    rose_ana_crun:finish => housekeeping
+                    """
+{% endif %}
+
+{% if TEST_NRUN %}
+        [[[ R1 ]]]
+            graph = atmos_main[^]:submit => atmos_nrun
+        [[[ R3//{{NCRUN_RESUB}} ]]]
+            graph = """
+                    atmos_nrun[-{{NCRUN_RESUB}}] => atmos_nrun
+                    atmos_main[^] & atmos_nrun => rose_ana_nrun
+                    rose_ana_nrun:finish => housekeeping
+                    """
+{% endif %}
